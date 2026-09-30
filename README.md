@@ -1,36 +1,39 @@
 # Jira Worklog — расширение браузера
 
-Недельный учёт worklog для Jira Server/Data Center (`https://tasks.adv.ru`), в духе Tempo: сумма часов по дням, список записей, создание, правка и перетаскивание на другой день.
+Недельный учёт worklog для Jira Server (`https://tasks.adv.ru`): сетка и список, создание/правка, перетаскивание. Чат агента читает GitLab MR (`gitlab.adv.ru`) из открытой вкладки и может списывать время в Jira.
 
-Это **не плагин Jira**. Нужна открытая сессия в браузере на `tasks.adv.ru`.
+Это **не плагин Jira**. Нужны сессии в браузере на Jira и, для MR, на GitLab.
 
 ## Сборка
-
-Нужны Node.js 20+ и npm.
 
 ```bash
 npm install
 npm run build
 ```
 
-Готовый unpacked-каталог: `.output/chrome-mv3`.
+Unpacked: `.output/chrome-mv3`.
 
-Режим разработки:
+## Установка
+
+1. Войдите в https://tasks.adv.ru и при работе с MR — в https://gitlab.adv.ru
+2. `chrome://extensions` → режим разработчика → загрузить `.output/chrome-mv3`
+3. Иконка → **Открыть неделю**. Кнопка **Агент** — чат.
+
+В настройках: URL Jira, цель часов, API-ключ модели (OpenAI-compatible) или GitHub token. Без ключа чат не запустится.
+
+## Чат агента
+
+Пишите обычным языком. Пример: ссылки на merge request GitLab + «залогируй время на сегодня». Агент вызывает `get_gitlab_mr` (нужна вкладка gitlab.adv.ru) и `create_worklog`.
+
+Статус инструментов показывается в чате («Инструмент: get_gitlab_mr»).
+
+## Правки кода (как Cursor)
+
+Из MV3 Cursor не запускается. Локальный host:
 
 ```bash
-npm run dev
+set CURSOR_API_KEY=cursor_...
+npm run agent-host
 ```
 
-## Установка в Chrome / Edge
-
-1. Войдите в Jira: https://tasks.adv.ru/secure/Dashboard.jspa
-2. Откройте `chrome://extensions` (или `edge://extensions`)
-3. Включите «Режим разработчика»
-4. «Загрузить распакованное расширение» → выберите `.output/chrome-mv3`
-5. Нажмите иконку расширения → **Открыть неделю**
-
-## Настройки
-
-В options можно задать URL Jira (по умолчанию `https://tasks.adv.ru`) и цель часов в день (по умолчанию 8). Дни с недобором подсвечиваются.
-
-После смены URL может понадобиться добавить хост в разрешениях расширения, если это не `tasks.adv.ru`.
+Ключ: [Cursor Dashboard → Integrations](https://cursor.com/dashboard/integrations). В настройках расширения тоже можно сохранить Cursor API key. Host слушает `http://127.0.0.1:7845`. Задания «поправь UI / git» идут инструментом `cursor_code_task`.

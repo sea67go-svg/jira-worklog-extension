@@ -7,13 +7,12 @@ import type {
   WorklogEntry,
 } from "./types";
 import {
-  addDays,
   dateKeysForStarted,
-  mondayOf,
   parseDateKey,
+  periodKeys,
   toDateKey,
-  weekKeys,
   withDateKeepingTime,
+  type Period,
 } from "./dates";
 import { jiraJson } from "./http";
 
@@ -145,9 +144,9 @@ function toEntry(issue: Pick<JiraIssue, "id" | "key"> & { fields: { summary: str
   };
 }
 
-function emptyDays(weekStart: Date): Record<string, WorklogEntry[]> {
+function emptyDays(keys: string[]): Record<string, WorklogEntry[]> {
   const days: Record<string, WorklogEntry[]> = {};
-  for (const key of weekKeys(weekStart)) days[key] = [];
+  for (const key of keys) days[key] = [];
   return days;
 }
 
@@ -284,18 +283,21 @@ async function loadTempoWeek(
   }
 }
 
-export async function loadWeek(weekStartKey: string): Promise<{
+export async function loadWeek(
+  weekStartKey: string,
+  period: Period = "week",
+): Promise<{
   myself: JiraUser;
   weekStart: string;
   days: Record<string, WorklogEntry[]>;
   stats: WeekLoadStats;
 }> {
-  const weekStart = mondayOf(parseDateKey(weekStartKey));
-  const startKey = toDateKey(weekStart);
-  const endKey = toDateKey(addDays(weekStart, 6));
+  const keys = periodKeys(parseDateKey(weekStartKey), period);
+  const startKey = keys[0];
+  const endKey = keys[keys.length - 1];
   const myself = await getMyself();
-  const allowed = new Set(weekKeys(weekStart));
-  const days = emptyDays(weekStart);
+  const allowed = new Set(keys);
+  const days = emptyDays(keys);
 
   let issues: JiraIssue[] = [];
   let usedJql = "";
@@ -310,7 +312,7 @@ export async function loadWeek(weekStartKey: string): Promise<{
           issues.push(issue);
         }
       }
-      if (issues.length >= 30) break;
+      if (issues.length >= 80) break;
     } catch {
       continue;
     }

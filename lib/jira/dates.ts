@@ -102,6 +102,57 @@ export function weekKeys(weekStart: Date): string[] {
   return Array.from({ length: 7 }, (_, i) => toDateKey(addDays(weekStart, i)));
 }
 
+export function firstOfMonth(date: Date): Date {
+  return new Date(date.getFullYear(), date.getMonth(), 1);
+}
+
+export function lastOfMonth(date: Date): Date {
+  return new Date(date.getFullYear(), date.getMonth() + 1, 0);
+}
+
+export function addMonths(date: Date, months: number): Date {
+  return new Date(date.getFullYear(), date.getMonth() + months, 1);
+}
+
+export function monthKeys(date: Date): string[] {
+  const start = firstOfMonth(date);
+  const end = lastOfMonth(date);
+  const keys: string[] = [];
+  for (let d = new Date(start); d <= end; d = addDays(d, 1)) {
+    keys.push(toDateKey(d));
+  }
+  return keys;
+}
+
+const MONTH_RU = [
+  "январь",
+  "февраль",
+  "март",
+  "апрель",
+  "май",
+  "июнь",
+  "июль",
+  "август",
+  "сентябрь",
+  "октябрь",
+  "ноябрь",
+  "декабрь",
+];
+
+export function formatMonthLabel(date: Date): string {
+  return `${MONTH_RU[date.getMonth()]} ${date.getFullYear()}`;
+}
+
+export type Period = "week" | "month";
+
+export function periodAnchorKey(date: Date, period: Period): string {
+  return period === "month" ? toDateKey(firstOfMonth(date)) : toDateKey(mondayOf(date));
+}
+
+export function periodKeys(anchor: Date, period: Period): string[] {
+  return period === "month" ? monthKeys(anchor) : weekKeys(mondayOf(anchor));
+}
+
 export function formatJiraStarted(date: Date): string {
   const pad = (n: number, w = 2) => String(n).padStart(w, "0");
   const y = date.getFullYear();

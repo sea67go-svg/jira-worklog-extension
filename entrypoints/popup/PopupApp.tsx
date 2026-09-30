@@ -1,14 +1,11 @@
 import { useEffect, useState } from "react";
-import {
-  formatHours,
-  mondayOf,
-  toDateKey,
-} from "../../lib/jira/dates";
+import { formatHours, periodAnchorKey, toDateKey } from "../../lib/jira/dates";
 import { getSettingsMsg, loadWeekMsg } from "../../lib/messages";
 
 export function PopupApp() {
   const [today, setToday] = useState("—");
-  const [week, setWeek] = useState("—");
+  const [periodTotal, setPeriodTotal] = useState("—");
+  const [periodLabel, setPeriodLabel] = useState("Месяц");
   const [error, setError] = useState<string | null>(null);
   const [baseUrl, setBaseUrl] = useState("https://tasks.adv.ru");
 
@@ -17,18 +14,20 @@ export function PopupApp() {
       try {
         const settings = await getSettingsMsg();
         setBaseUrl(settings.baseUrl);
-        const start = toDateKey(mondayOf(new Date()));
-        const data = await loadWeekMsg(start);
+        const period = settings.period || "month";
+        setPeriodLabel(period === "month" ? "Месяц" : "Неделя");
+        const start = periodAnchorKey(new Date(), period);
+        const data = await loadWeekMsg(start, period);
         const todayKey = toDateKey(new Date());
         const todaySec = (data.days[todayKey] || []).reduce(
           (s, e) => s + e.timeSpentSeconds,
           0,
         );
-        const weekSec = Object.values(data.days)
+        const rangeSec = Object.values(data.days)
           .flat()
           .reduce((s, e) => s + e.timeSpentSeconds, 0);
         setToday(formatHours(todaySec));
-        setWeek(formatHours(weekSec));
+        setPeriodTotal(formatHours(rangeSec));
       } catch (err) {
         setError(
           (err as { auth?: boolean }).auth
@@ -63,13 +62,13 @@ export function PopupApp() {
             <b>{today}</b>
           </div>
           <div className="stat">
-            <span>Неделя</span>
-            <b>{week}</b>
+            <span>{periodLabel}</span>
+            <b>{periodTotal}</b>
           </div>
         </>
       )}
       <button className="btn btn-primary" onClick={openWeek}>
-        Открыть неделю
+        Открыть календарь
       </button>
       <button
         className="btn"

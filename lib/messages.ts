@@ -1,3 +1,4 @@
+import type { Period } from "./jira/dates";
 import type { Settings } from "./settings";
 import type {
   IssuePickerIssue,
@@ -16,7 +17,7 @@ export type WeekPayload = {
 export type ExtensionRequest =
   | { type: "GET_SETTINGS" }
   | { type: "SAVE_SETTINGS"; settings: Settings }
-  | { type: "LOAD_WEEK"; weekStart: string }
+  | { type: "LOAD_WEEK"; weekStart: string; period?: Period }
   | { type: "SEARCH_ISSUES"; query: string }
   | {
       type: "CREATE_WORKLOG";
@@ -42,7 +43,9 @@ export type ExtensionRequest =
       timeSpent: string;
       comment: string;
     }
-  | { type: "DELETE_WORKLOG"; issueKey: string; worklogId: string };
+  | { type: "DELETE_WORKLOG"; issueKey: string; worklogId: string }
+  | { type: "AGENT_CHAT"; text: string; weekStart: string; history: { role: "user" | "assistant"; content: string }[] }
+  | { type: "RELOAD_EXTENSION" };
 
 export type ExtensionResponse<T = unknown> =
   | { ok: true; data: T }
@@ -70,8 +73,8 @@ export function saveSettingsMsg(settings: Settings): Promise<Settings> {
   return sendMessage<Settings>({ type: "SAVE_SETTINGS", settings });
 }
 
-export function loadWeekMsg(weekStart: string): Promise<WeekPayload> {
-  return sendMessage<WeekPayload>({ type: "LOAD_WEEK", weekStart });
+export function loadWeekMsg(weekStart: string, period: Period = "week"): Promise<WeekPayload> {
+  return sendMessage<WeekPayload>({ type: "LOAD_WEEK", weekStart, period });
 }
 
 export function searchIssuesMsg(query: string): Promise<IssuePickerIssue[]> {

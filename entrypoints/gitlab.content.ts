@@ -6,7 +6,7 @@ function isSiteFetch(message: unknown): message is SitePageFetch {
 }
 
 export default defineContentScript({
-  matches: ["https://tasks.adv.ru/*"],
+  matches: ["https://gitlab.adv.ru/*"],
   runAt: "document_idle",
   main() {
     chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {

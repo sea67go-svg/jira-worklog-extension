@@ -7,7 +7,15 @@ export default defineConfig({
     description: "Недельный учёт worklog для Jira (tasks.adv.ru)",
     version: "0.1.0",
     permissions: ["storage", "tabs", "scripting"],
-    host_permissions: ["https://tasks.adv.ru/*"],
+    host_permissions: [
+      "https://tasks.adv.ru/*",
+      "https://gitlab.adv.ru/*",
+      "https://api.github.com/*",
+      "https://api.openai.com/*",
+      "https://models.github.ai/*",
+      "http://127.0.0.1/*",
+      "http://localhost/*",
+    ],
     optional_host_permissions: ["https://*/*"],
     icons: {
       16: "icon-16.png",

@@ -14,6 +14,7 @@ type Props = {
   baseUrl: string;
   weekTotal: number;
   hoursPerDay: number;
+  totalLabel?: string;
   onOpen: (dateKey: string, entry?: WorklogEntry) => void;
   onDrop: (dateKey: string, entry: WorklogEntry) => void;
 };
@@ -41,6 +42,7 @@ export function ReportView({
   baseUrl,
   weekTotal,
   hoursPerDay,
+  totalLabel = "Итого за неделю",
   onOpen,
   onDrop,
 }: Props) {
@@ -67,6 +69,9 @@ export function ReportView({
             <div className="report-date">
               <div className="report-num">{formatDayShort(date)}</div>
               <div className="report-wd">{weekdayUpper(date)}</div>
+              <button type="button" className="btn btn-add-head" onClick={() => onOpen(key)}>
+                +
+              </button>
             </div>
             <div className="report-lines">
               {entries.length === 0 && (
@@ -128,7 +133,7 @@ export function ReportView({
         );
       })}
       <div className="report-total">
-        <span>Итого за неделю</span>
+        <span>{totalLabel}</span>
         <b>{formatHours(weekTotal)}</b>
       </div>
     </div>

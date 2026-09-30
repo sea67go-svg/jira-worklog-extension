@@ -8,13 +8,15 @@
     "dev": "wxt",
     "build": "wxt build",
     "zip": "wxt zip",
-    "postinstall": "wxt prepare"
+    "postinstall": "wxt prepare",
+    "agent-host": "node agent-host/server.mjs"
   },
   "dependencies": {
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
+    "@cursor/sdk": "^1.0.31",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@wxt-dev/module-react": "^1.1.3",
