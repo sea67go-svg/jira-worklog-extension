@@ -15,6 +15,7 @@ import {
 } from "../../lib/jira/dates";
 import { getSettingsMsg, loadWeekMsg, saveSettingsMsg, sendMessage } from "../../lib/messages";
 import type { WeekView } from "../../lib/settings";
+import { downloadMonthReport } from "../../lib/report/monthXlsx";
 import { AgentChat } from "./AgentChat";
 import { LogForm } from "./LogForm";
 import { ReportView } from "./ReportView";
@@ -36,6 +37,7 @@ export function WeekApp() {
   const [hoursPerDay, setHoursPerDay] = useState(8);
   const [baseUrl, setBaseUrl] = useState("https://tasks.adv.ru");
   const [hint, setHint] = useState("");
+  const [fullName, setFullName] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<{ message: string; auth?: boolean } | null>(
     null,
@@ -62,6 +64,7 @@ export function WeekApp() {
       setBaseUrl(settings.baseUrl);
       setWeekView(settings.weekView);
       setDays(data.days);
+      setFullName(data.myself.displayName || data.myself.name || "");
       setAnchor(data.weekStart);
       const total = Object.values(data.days).reduce(
         (sum, list) => sum + list.length,
@@ -125,6 +128,14 @@ export function WeekApp() {
     setAnchor(nextAnchor);
     const settings = await getSettingsMsg();
     await saveSettingsMsg({ ...settings, period: next });
+  }
+
+  function exportMonth() {
+    try {
+      downloadMonthReport({ fullName, keys, days });
+    } catch (err) {
+      window.alert(err instanceof Error ? err.message : "Не удалось выгрузить отчёт");
+    }
   }
 
   function reloadExtension() {
@@ -284,6 +295,16 @@ export function WeekApp() {
           <button className="btn" onClick={() => void reload()}>
             Обновить
           </button>
+          {period === "month" && (
+            <button
+              className="btn"
+              onClick={exportMonth}
+              disabled={loading || Boolean(error)}
+              title="Выгрузить отчёт за месяц в Excel"
+            >
+              Выгрузить xlsx
+            </button>
+          )}
           <button className="btn" onClick={reloadExtension} title="Перезагрузить расширение">
             Перезагрузить
           </button>
