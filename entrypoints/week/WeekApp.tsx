@@ -130,9 +130,19 @@ export function WeekApp() {
     await saveSettingsMsg({ ...settings, period: next });
   }
 
-  function exportMonth() {
+  async function exportMonth() {
     try {
-      downloadMonthReport({ fullName, keys, days });
+      const settings = await getSettingsMsg();
+      let reportName = settings.reportFullName;
+      if (!reportName) {
+        // Первая выгрузка: предлагаем имя из Jira, сохраняем подтверждённое
+        const answer = window.prompt("ФИО для отчёта (можно изменить в настройках)", fullName);
+        if (answer === null) return;
+        reportName = answer.trim();
+        if (!reportName) return;
+        await saveSettingsMsg({ ...settings, reportFullName: reportName });
+      }
+      downloadMonthReport({ fullName: reportName, keys, days });
     } catch (err) {
       window.alert(err instanceof Error ? err.message : "Не удалось выгрузить отчёт");
     }
@@ -298,7 +308,7 @@ export function WeekApp() {
           {period === "month" && (
             <button
               className="btn"
-              onClick={exportMonth}
+              onClick={() => void exportMonth()}
               disabled={loading || Boolean(error)}
               title="Выгрузить отчёт за месяц в Excel"
             >

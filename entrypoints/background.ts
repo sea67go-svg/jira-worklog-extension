@@ -2,6 +2,7 @@ import { runAgent } from "../lib/agent/run";
 import {
   createWorklog,
   deleteWorklog,
+  getMyself,
   JiraAuthError,
   loadWeek,
   moveWorklog,
@@ -46,6 +47,8 @@ async function handle(
   switch (request.type) {
     case "GET_SETTINGS":
       return getSettings();
+    case "GET_MYSELF":
+      return getMyself();
     case "SAVE_SETTINGS":
       await saveSettings(request.settings);
       return getSettings();

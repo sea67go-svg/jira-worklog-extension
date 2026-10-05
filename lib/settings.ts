@@ -24,6 +24,8 @@ export type Settings = {
   agentModel: string;
   cursorApiKey: string;
   agentHostUrl: string;
+  /** ФИО для xlsx-отчёта; пусто — спросить при первой выгрузке (по умолчанию из Jira). */
+  reportFullName: string;
 };
 
 export async function getSettings(): Promise<Settings> {
@@ -39,6 +41,7 @@ export async function getSettings(): Promise<Settings> {
     "agentModel",
     "cursorApiKey",
     "agentHostUrl",
+    "reportFullName",
   ]);
   const baseUrl = String(stored.baseUrl || DEFAULT_BASE_URL).replace(/\/+$/, "");
   const hoursPerDay = Number(stored.hoursPerDay);
@@ -59,6 +62,7 @@ export async function getSettings(): Promise<Settings> {
     agentModel: String(stored.agentModel || DEFAULT_AGENT_MODEL),
     cursorApiKey: String(stored.cursorApiKey || ""),
     agentHostUrl: String(stored.agentHostUrl || DEFAULT_AGENT_HOST_URL),
+    reportFullName: String(stored.reportFullName || "").trim(),
   };
 }
 
@@ -75,5 +79,6 @@ export async function saveSettings(settings: Settings): Promise<void> {
     agentModel: settings.agentModel,
     cursorApiKey: settings.cursorApiKey,
     agentHostUrl: settings.agentHostUrl,
+    reportFullName: settings.reportFullName.trim(),
   });
 }

@@ -6,7 +6,7 @@ import {
   DEFAULT_BASE_URL,
   DEFAULT_GITHUB_REPO,
 } from "../../lib/settings";
-import { getSettingsMsg, saveSettingsMsg } from "../../lib/messages";
+import { getMyselfMsg, getSettingsMsg, saveSettingsMsg } from "../../lib/messages";
 import type { Period } from "../../lib/jira/dates";
 
 export function OptionsApp() {
@@ -20,6 +20,8 @@ export function OptionsApp() {
   const [agentModel, setAgentModel] = useState(DEFAULT_AGENT_MODEL);
   const [cursorApiKey, setCursorApiKey] = useState("");
   const [agentHostUrl, setAgentHostUrl] = useState(DEFAULT_AGENT_HOST_URL);
+  const [reportFullName, setReportFullName] = useState("");
+  const [jiraFullName, setJiraFullName] = useState("");
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
 
@@ -35,7 +37,12 @@ export function OptionsApp() {
       setAgentModel(s.agentModel || DEFAULT_AGENT_MODEL);
       setCursorApiKey(s.cursorApiKey);
       setAgentHostUrl(s.agentHostUrl || DEFAULT_AGENT_HOST_URL);
+      setReportFullName(s.reportFullName);
     });
+    // ФИО из Jira — подсказка в поле, пока своё не задано
+    void getMyselfMsg()
+      .then((me) => setJiraFullName(me.displayName || me.name || ""))
+      .catch(() => undefined);
   }, []);
 
   async function onSave(e: React.FormEvent) {
@@ -63,6 +70,7 @@ export function OptionsApp() {
         agentModel: agentModel.trim() || DEFAULT_AGENT_MODEL,
         cursorApiKey: cursorApiKey.trim(),
         agentHostUrl: agentHostUrl.trim() || DEFAULT_AGENT_HOST_URL,
+        reportFullName: reportFullName.trim(),
       });
       setSaved(true);
     } catch {
@@ -93,6 +101,17 @@ export function OptionsApp() {
           <option value="month">Месяц</option>
           <option value="week">Неделя</option>
         </select>
+      </label>
+      <label className="field">
+        ФИО для отчёта xlsx
+        <input
+          value={reportFullName}
+          placeholder={jiraFullName || "Иванов Иван Иванович"}
+          onChange={(e) => setReportFullName(e.target.value)}
+        />
+        <span className="options-hint">
+          Пусто — при первой выгрузке предложим имя из Jira.
+        </span>
       </label>
       <label className="field">
         GitHub репозиторий (owner/name)

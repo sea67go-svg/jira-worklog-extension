@@ -16,6 +16,7 @@ export type WeekPayload = {
 
 export type ExtensionRequest =
   | { type: "GET_SETTINGS" }
+  | { type: "GET_MYSELF" }
   | { type: "SAVE_SETTINGS"; settings: Settings }
   | { type: "LOAD_WEEK"; weekStart: string; period?: Period }
   | { type: "SEARCH_ISSUES"; query: string }
@@ -67,6 +68,10 @@ export async function sendMessage<T>(
 
 export function getSettingsMsg(): Promise<Settings> {
   return sendMessage<Settings>({ type: "GET_SETTINGS" });
+}
+
+export function getMyselfMsg(): Promise<JiraUser> {
+  return sendMessage<JiraUser>({ type: "GET_MYSELF" });
 }
 
 export function saveSettingsMsg(settings: Settings): Promise<Settings> {
