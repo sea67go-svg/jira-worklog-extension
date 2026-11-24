@@ -200,22 +200,55 @@ function slashDate(iso: string): string {
   return iso.replaceAll("-", "/");
 }
 
-function jqlVariants(myself: JiraUser, startKey: string, endKey: string): string[] {
+/** За период задач обычно немного, но закрытые тоже должны попасть целиком. */
+const PERIOD_ISSUE_LIMIT = 1000;
+
+function quotedUser(myself: JiraUser): string {
   const user = myself.name || myself.key;
-  const quoted = user ? `"${user.replaceAll('"', '\\"')}"` : "";
+  return user ? `"${user.replaceAll('"', '\\"')}"` : "";
+}
+
+/** Задачи с worklog автора за даты периода, включая закрытые. */
+function periodJqlVariants(myself: JiraUser, startKey: string, endKey: string): string[] {
+  const quoted = quotedUser(myself);
   const variants = [
-    `worklogAuthor = currentUser() ORDER BY updated DESC`,
-    `worklogAuthor = currentUser() AND updated >= "${startKey}" ORDER BY updated DESC`,
     `worklogAuthor = currentUser() AND worklogDate >= "${startKey}" AND worklogDate <= "${endKey}"`,
     `worklogAuthor = currentUser() AND worklogDate >= "${slashDate(startKey)}" AND worklogDate <= "${slashDate(endKey)}"`,
   ];
   if (quoted) {
     variants.push(
-      `worklogAuthor = ${quoted} ORDER BY updated DESC`,
       `worklogAuthor = ${quoted} AND worklogDate >= "${startKey}" AND worklogDate <= "${endKey}"`,
     );
   }
   return variants;
+}
+
+/** Запасной поиск, если Jira не поняла worklogDate. */
+function recentJqlVariants(myself: JiraUser, startKey: string): string[] {
+  const quoted = quotedUser(myself);
+  const variants = [
+    `worklogAuthor = currentUser() AND updated >= "${startKey}" ORDER BY updated DESC`,
+    `worklogAuthor = currentUser() ORDER BY updated DESC`,
+  ];
+  if (quoted) {
+    variants.push(`worklogAuthor = ${quoted} AND updated >= "${startKey}" ORDER BY updated DESC`);
+  }
+  return variants;
+}
+
+async function searchFirst(
+  jqls: string[],
+  limit: number,
+): Promise<{ issues: JiraIssue[]; jql: string }> {
+  for (const jql of jqls) {
+    try {
+      const issues = await searchIssues(jql, limit);
+      if (issues.length > 0) return { issues, jql };
+    } catch {
+      continue;
+    }
+  }
+  return { issues: [], jql: "" };
 }
 
 type TempoWorklog = {
@@ -299,24 +332,15 @@ export async function loadWeek(
   const allowed = new Set(keys);
   const days = emptyDays(keys);
 
-  let issues: JiraIssue[] = [];
-  let usedJql = "";
-  const seen = new Set<string>();
-  for (const jql of jqlVariants(myself, startKey, endKey)) {
-    try {
-      const found = await searchIssues(jql);
-      if (!usedJql) usedJql = jql;
-      for (const issue of found) {
-        if (!seen.has(issue.key)) {
-          seen.add(issue.key);
-          issues.push(issue);
-        }
-      }
-      if (issues.length >= 80) break;
-    } catch {
-      continue;
-    }
-  }
+  const dated = await searchFirst(
+    periodJqlVariants(myself, startKey, endKey),
+    PERIOD_ISSUE_LIMIT,
+  );
+  const found = dated.issues.length
+    ? dated
+    : await searchFirst(recentJqlVariants(myself, startKey), PERIOD_ISSUE_LIMIT);
+  const issues = found.issues;
+  const usedJql = found.jql;
 
   await fillFromIssues(issues, myself, days, allowed);
 
