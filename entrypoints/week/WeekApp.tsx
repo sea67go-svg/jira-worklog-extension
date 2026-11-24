@@ -22,12 +22,64 @@ import { ReportView } from "./ReportView";
 
 type FormState = { dateKey: string; entry?: WorklogEntry | null };
 
+const MONTH_SHORT = [
+  "янв",
+  "фев",
+  "мар",
+  "апр",
+  "май",
+  "июн",
+  "июл",
+  "авг",
+  "сен",
+  "окт",
+  "ноя",
+  "дек",
+];
+
 function padMonthCells(keys: string[]): (string | null)[] {
   const first = parseDateKey(keys[0]);
   const lead = (first.getDay() + 6) % 7;
   const cells: (string | null)[] = [...Array(lead).fill(null), ...keys];
   while (cells.length % 7) cells.push(null);
   return cells;
+}
+
+function formatGap(seconds: number): string {
+  const hours = Math.round((seconds / 3600) * 10) / 10;
+  if (hours >= 0.1) {
+    const text = Number.isInteger(hours)
+      ? String(hours)
+      : hours.toLocaleString("ru-RU", {
+          minimumFractionDigits: 1,
+          maximumFractionDigits: 1,
+        });
+    return `${text}ч`;
+  }
+  return formatHours(seconds);
+}
+
+function shortfallWarning(
+  keys: string[],
+  days: Record<string, WorklogEntry[]>,
+  hoursPerDay: number,
+): string {
+  const target = hoursPerDay * 3600;
+  const parts: string[] = [];
+  for (const key of keys) {
+    const date = parseDateKey(key);
+    const weekend = date.getDay() === 0 || date.getDay() === 6;
+    if (weekend) continue;
+    const seconds = (days[key] || []).reduce(
+      (sum, entry) => sum + entry.timeSpentSeconds,
+      0,
+    );
+    if (seconds >= target - 60) continue;
+    const label = `${date.getDate()} ${MONTH_SHORT[date.getMonth()]}`;
+    parts.push(`${label} − ${formatGap(target - seconds)}`);
+  }
+  if (!parts.length) return "";
+  return `Не хватает часов: ${parts.join(", ")}`;
 }
 
 export function WeekApp() {
@@ -180,6 +232,10 @@ export function WeekApp() {
     0,
   );
   const boardCells = period === "month" ? padMonthCells(keys) : keys;
+  const shortfall = useMemo(
+    () => shortfallWarning(keys, days, hoursPerDay),
+    [keys, days, hoursPerDay],
+  );
 
   function renderDay(key: string) {
     const entries = days[key] || [];
@@ -339,6 +395,9 @@ export function WeekApp() {
       {error && !error.auth && <div className="status">{error.message}</div>}
       {!error && hint && <div className="status hint">{hint}</div>}
       {loading && !error && <div className="status">Загрузка worklog…</div>}
+      {!loading && !error && shortfall && (
+        <div className="status warn">{shortfall}</div>
+      )}
 
       {!loading && !error && weekView === "report" && (
         <ReportView

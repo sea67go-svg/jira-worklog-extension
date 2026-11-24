@@ -243,6 +243,12 @@ button {
   font-size: 13px;
 }
 
+.status.warn {
+  color: var(--warn);
+  font-weight: 600;
+  background: #fff6f0;
+}
+
 .status a {
   color: var(--teal-dark);
 }
